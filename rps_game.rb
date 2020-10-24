@@ -16,6 +16,7 @@ end
 
 class Move
   VALUES = ['rock', 'paper', 'scissors', 'spock', 'lizard']
+  SHORT_VALUES = ['r', 'p', 'sc', 'sp', 'l']
 
   WINNING_RULES = {
     'rock' => ['scissors', 'lizard'],
@@ -49,26 +50,47 @@ end
 
 class Human < Player
   include Displayable
+
   def set_name
     n = ""
     loop do
       prompt "What's your name?"
       n = gets.chomp
-      break unless n.empty?
+      break unless invalid_name?(n)
       prompt "Sorry, you must enter a value.\n\n"
     end
-    self.name = n
+    self.name = n.strip
   end
 
   def choose
     choice = nil
     loop do
-      prompt "Please choose rock, paper, scissors, spock, or lizard: "
-      choice = gets.chomp
-      break if Move::VALUES.include?(choice)
+      prompt "Choose one, you also can type abbreviations:"
+      choice = gets.chomp.downcase.strip
+      break if valid_choice?(choice)
       prompt "Sorry, invalid choice."
     end
-    self.move = Move.new(choice)
+    self.move = Move.new(normalize_choice(choice))
+  end
+
+  private
+
+  def invalid_name?(name)
+    name.strip.empty?
+  end
+
+  def valid_choice?(choice)
+    Move::VALUES.include?(choice) ||
+      Move::SHORT_VALUES.include?(choice)
+  end
+
+  def normalize_choice(choice)
+    if Move::SHORT_VALUES.include?(choice)
+      index = Move::SHORT_VALUES.index(choice)
+      Move::VALUES[index]
+    else
+      choice
+    end
   end
 end
 
@@ -123,6 +145,7 @@ class RPSGame
 
   def play_round
     update_scores
+    display_selection_menu
     human.choose
     computer.choose
     display_choices
@@ -130,6 +153,12 @@ class RPSGame
     winner.score += 1 unless tie?
     display_round_result(winner)
     prompt_for_next_round unless game_won?
+  end
+
+  def update_scores
+    clear_screen
+    display_banner("rock-paper-scissors")
+    display_scores
   end
 
   def display_scores
@@ -141,6 +170,17 @@ class RPSGame
     puts "  #{human.name} | #{human.score} - \
      #{computer.score} | #{computer.name}"
     puts "================================"
+  end
+
+  def display_selection_menu
+    choice_prompt = <<-MSG
+      * Rock (r)
+      * Paper (p)
+      * Scissors (sc)
+      * Spock (sp)
+      * Lizard (l)
+    MSG
+    puts choice_prompt
   end
 
   def display_choices
@@ -175,12 +215,6 @@ class RPSGame
 
   def game_won?
     human.score == WINNING_SCORE || computer.score == WINNING_SCORE
-  end
-
-  def update_scores
-    clear_screen
-    display_banner("rock-paper-scissors")
-    display_scores
   end
 
   def display_game_result
@@ -220,6 +254,6 @@ RPSGame.new.play
 # add a class for each moves:
 # keep track of move history:
 # add computer personalities:
-# add shortcuts for choices :
+# add shortcuts for choices : DONE
 # add winning messages      :
 # UI improvements           :
