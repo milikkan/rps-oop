@@ -8,35 +8,29 @@ module Displayable
   end
 
   def display_banner(title)
-    puts "#{'#' * (title.size + 6)}"
+    puts '#' * (title.size + 6)
     puts "## #{title.upcase} ##"
-    puts "#{'#' * (title.size + 6)}"
+    puts '#' * (title.size + 6)
   end
 end
 
 class Move
-  VALUES = ['rock', 'paper', 'scissors']
+  VALUES = ['rock', 'paper', 'scissors', 'spock', 'lizard']
+
+  WINNING_RULES = {
+    'rock' => ['scissors', 'lizard'],
+    'paper' => ['rock', 'spock'],
+    'scissors' => ['paper', 'lizard'],
+    'spock' => ['scissors', 'rock'],
+    'lizard' => ['paper', 'spock']
+  }
 
   def initialize(value)
     @value = value
   end
 
-  def scissors?
-    @value == 'scissors'
-  end
-
-  def rock?
-    @value == 'rock'
-  end
-
-  def paper?
-    @value == 'paper'
-  end
-
   def >(other_move)
-    (rock? && other_move.scissors?) ||
-      (paper? && other_move.rock?) ||
-      (scissors? && other_move.paper?)
+    WINNING_RULES[to_s].include?(other_move.to_s)
   end
 
   def to_s
@@ -69,7 +63,7 @@ class Human < Player
   def choose
     choice = nil
     loop do
-      prompt "Please choose rock, paper, or scissors: "
+      prompt "Please choose rock, paper, scissors, spock, or lizard: "
       choice = gets.chomp
       break if Move::VALUES.include?(choice)
       prompt "Sorry, invalid choice."
@@ -113,7 +107,7 @@ class RPSGame
     display_goodbye_message
   end
 
-  private 
+  private
 
   def display_welcome_message
     puts "\n\nWelcome to Rock, Paper, Scissors, #{human.name}!"
@@ -144,7 +138,8 @@ class RPSGame
     puts "           SCOREBOARD           "
     puts "   (Player reaching #{WINNING_SCORE} wins)"
     puts
-    puts "   #{human.name} | #{human.score}   -   #{computer.score} | #{computer.name}"
+    puts "  #{human.name} | #{human.score} - \
+     #{computer.score} | #{computer.name}"
     puts "================================"
   end
 
@@ -192,7 +187,7 @@ class RPSGame
     update_scores
     display_choices
     puts "#{determine_round_winner.name} won the last round..."
-    winner = (human.score == WINNING_SCORE) ? human : computer
+    winner = human.score == WINNING_SCORE ? human : computer
     puts ""
     puts "================================"
     puts "           GAME OVER            "
@@ -221,7 +216,7 @@ end
 RPSGame.new.play
 
 # keeping score             : DONE
-# add spock and lizard      :
+# add spock and lizard      : DONE
 # add a class for each moves:
 # keep track of move history:
 # add computer personalities:
