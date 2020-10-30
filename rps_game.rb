@@ -74,7 +74,17 @@ class Player
   def initialize
     set_name
     @score = 0
+    @move_history = []
   end
+
+  def save_move
+    @move_history << self.move
+  end
+
+  def get_move_history
+    @move_history.map { |move| move.to_s }
+  end
+
 end
 
 class Human < Player
@@ -100,6 +110,7 @@ class Human < Player
       prompt "Sorry, invalid choice."
     end
     self.move = Move.new(normalize_choice(choice))
+    save_move
   end
 
   private
@@ -130,6 +141,7 @@ class Computer < Player
 
   def choose
     self.move = Move.new(Move::VALUES.sample)
+    save_move
   end
 end
 
@@ -153,6 +165,7 @@ class RPSGame
       reset_scores
       play_round until game_won?
       display_game_result
+      display_move_history
       break unless play_again?
     end
     display_goodbye_message
@@ -275,6 +288,13 @@ class RPSGame
     puts "================================"
   end
 
+  def display_move_history
+    puts ""
+    puts "#{human.name}'s moves so far: #{human.get_move_history.join(' - ')}"
+    puts "#{computer.name}'s moves so far: #{computer.get_move_history.join(' - ')}"
+    puts ""
+  end
+
   def play_again?
     answer = nil
     loop do
@@ -297,7 +317,7 @@ RPSGame.new.play
 # keeping score             : DONE
 # add spock and lizard      : DONE
 # add a class for each moves:
-# keep track of move history:
+# keep track of move history: 
 # add computer personalities:
 # add shortcuts for choices : DONE
 # add winning messages      : DONE
