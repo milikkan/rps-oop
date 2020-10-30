@@ -24,47 +24,77 @@ class Move
   VALUES = ['rock', 'paper', 'scissors', 'spock', 'lizard']
   SHORT_VALUES = ['r', 'p', 'sc', 'sp', 'l']
 
-  WINNING_RULES = {
-    'rock' => ['scissors', 'lizard'],
-    'paper' => ['rock', 'spock'],
-    'scissors' => ['paper', 'lizard'],
-    'spock' => ['scissors', 'rock'],
-    'lizard' => ['paper', 'spock']
-  }
-
-  WINNING_MESSAGES = {
-    'rock' => {
-      'lizard' => 'ROCK crushes LIZARD',
-      'scissors' => 'ROCK crushes SCISSORS'
-    },
-    'paper' => {
-      'rock' => 'PAPER covers ROCK',
-      'spock' => 'PAPER disproves SPOCK'
-    },
-    'scissors' => {
-      'paper' => 'SCISSORS cuts PAPER',
-      'lizard' => 'SCISSORS decapitates LIZARD'
-    },
-    'spock' => {
-      'scissors' => 'SPOCK smashes SCISSORS',
-      'rock' => 'SPOCK vaporizes ROCK'
-    },
-    'lizard' => {
-      'paper' => 'LIZARD eats PAPER',
-      'spock' => 'LIZARD poisons SPOCK'
-    }
-  }
-
   def initialize(value)
     @value = value
   end
 
-  def >(other_move)
-    WINNING_RULES[to_s].include?(other_move.to_s)
-  end
-
   def to_s
     @value
+  end
+end
+
+class Rock < Move
+  def >(other_move)
+    ['scissors', 'lizard'].include?(other_move.to_s)
+  end
+
+  def winning_message(loser_move)
+    case loser_move.to_s
+    when 'lizard'   then 'ROCK crushes LIZARD'
+    when 'scissors' then 'ROCK crushes SCISSORS'
+    end
+  end
+end
+
+class Paper < Move
+  def >(other_move)
+    ['rock', 'spock'].include?(other_move.to_s)
+  end
+
+  def winning_message(loser_move)
+    case loser_move.to_s
+    when 'rock'  then 'PAPER covers ROCK'
+    when 'spock' then 'PAPER disproves SPOCK'
+    end
+  end
+end
+
+class Scissors < Move
+  def >(other_move)
+    ['paper', 'lizard'].include?(other_move.to_s)
+  end
+
+  def winning_message(loser_move)
+    case loser_move.to_s
+    when 'paper'  then 'SCISSORS cuts PAPER'
+    when 'lizard' then 'SCISSORS decapitates LIZARD'
+    end
+  end
+end
+
+class Spock < Move
+  def >(other_move)
+    ['scissors', 'rock'].include?(other_move.to_s)
+  end
+
+  def winning_message(loser_move)
+    case loser_move.to_s
+    when 'scissors' then 'SPOCK smashes SCISSORS'
+    when 'rock'     then 'SPOCK vaporizes ROCK'
+    end
+  end
+end
+
+class Lizard < Move
+  def >(other_move)
+    ['paper', 'spock'].include?(other_move.to_s)
+  end
+
+  def winning_message(loser_move)
+    case loser_move.to_s
+    when 'paper' then 'LIZARD eats PAPER'
+    when 'spock' then 'LIZARD poisons SPOCK'
+    end
   end
 end
 
@@ -78,13 +108,12 @@ class Player
   end
 
   def save_move
-    @move_history << self.move
+    @move_history << move
   end
 
-  def get_move_history
-    @move_history.map { |move| move.to_s }
+  def move_history
+    @move_history.map(&:to_s)
   end
-
 end
 
 class Human < Player
@@ -109,7 +138,7 @@ class Human < Player
       break if valid_choice?(choice)
       prompt "Sorry, invalid choice."
     end
-    self.move = Move.new(normalize_choice(choice))
+    self.move = RPSGame::POOL_OF_MOVES[normalize_choice(choice)]
     save_move
   end
 
@@ -140,7 +169,7 @@ class Computer < Player
   end
 
   def choose
-    self.move = Move.new(Move::VALUES.sample)
+    self.move = RPSGame::POOL_OF_MOVES[Move::VALUES.sample]
     save_move
   end
 end
@@ -148,6 +177,14 @@ end
 # Main orchestration class for game
 class RPSGame
   include Displayable
+
+  POOL_OF_MOVES = {
+    'rock' => Rock.new('rock'),
+    'paper' => Paper.new('paper'),
+    'scissors' => Scissors.new('scissors'),
+    'spock' => Spock.new('spock'),
+    'lizard' => Lizard.new('lizard')
+  }
 
   WINNING_SCORE = 2
 
@@ -206,9 +243,9 @@ class RPSGame
   def display_scores
     puts ""
     puts "================================"
-    puts "           SCOREBOARD           "
+    puts "           SCOREBOARD"
     puts "   (Player reaching #{WINNING_SCORE} wins)"
-    puts
+    puts ""
     puts "  #{human.name} | #{human.score} - \
      #{computer.score} | #{computer.name}"
     puts "================================"
@@ -238,16 +275,19 @@ class RPSGame
       refresh_scoreboard
       display_choices
       display_winning_message(winner)
-      puts ""
-      puts "#{winner.name} won this round!"
+      display_round_winner(winner)
     end
+  end
+
+  def display_round_winner(round_winner, last=false)
+    puts ""
+    puts "#{round_winner.name} won #{last ? 'the last' : 'this'} round!"
   end
 
   def display_winning_message(winner)
     loser = winner == human ? computer : human
-    puts "===>  " + \
-      Move::WINNING_MESSAGES[winner.move.to_s][loser.move.to_s] + \
-      "   <==="
+    message = winner.move.winning_message(loser.move)
+    puts "===>  #{message}   <==="
   end
 
   def tie?
@@ -261,7 +301,7 @@ class RPSGame
   def update_score(winner)
     winner.score += 1 unless tie?
   end
-    
+
   def prompt_for_next_round
     puts ""
     puts "Hit 'Enter' to play the next round..."
@@ -277,21 +317,24 @@ class RPSGame
     display_choices
     last_round_winner = determine_round_winner
     display_winning_message(last_round_winner)
-    puts ""
-    puts "#{last_round_winner.name} won the last round..."
-    winner = human.score == WINNING_SCORE ? human : computer
+    display_round_winner(last_round_winner, true)
+    game_winner = human.score == WINNING_SCORE ? human : computer
+    display_game_winner(game_winner)
+  end
+
+  def display_game_winner(game_winner)
     puts ""
     puts "================================"
-    puts "           GAME OVER            "
-    puts
-    puts "   #{winner.name} won the game! "
+    puts "           GAME OVER"
+    puts ""
+    puts "     #{game_winner.name} won the game! "
     puts "================================"
   end
 
   def display_move_history
     puts ""
-    puts "#{human.name}'s moves so far: #{human.get_move_history.join(' - ')}"
-    puts "#{computer.name}'s moves so far: #{computer.get_move_history.join(' - ')}"
+    puts "#{human.name}'s moves so far: #{human.move_history.join(' - ')}"
+    puts "#{computer.name}'s moves so far: #{computer.move_history.join(' - ')}"
     puts ""
   end
 
@@ -316,7 +359,7 @@ RPSGame.new.play
 
 # keeping score             : DONE
 # add spock and lizard      : DONE
-# add a class for each moves:
+# add a class for each moves: DONE
 # keep track of move history: DONE
 # add computer personalities:
 # add shortcuts for choices : DONE
