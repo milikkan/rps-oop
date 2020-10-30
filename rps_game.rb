@@ -8,9 +8,15 @@ module Displayable
   end
 
   def display_banner(title)
-    puts '#' * (title.size + 6)
+    line(title, 3)
     puts "## #{title.upcase} ##"
-    puts '#' * (title.size + 6)
+    line(title, 3)
+  end
+
+  private
+
+  def line(str, gap)
+    puts '#' * (str.size + gap * 2)
   end
 end
 
@@ -24,6 +30,29 @@ class Move
     'scissors' => ['paper', 'lizard'],
     'spock' => ['scissors', 'rock'],
     'lizard' => ['paper', 'spock']
+  }
+
+  WINNING_MESSAGES = {
+    'rock' => {
+      'lizard' => 'ROCK crushes LIZARD',
+      'scissors' => 'ROCK crushes SCISSORS'
+    },
+    'paper' => {
+      'rock' => 'PAPER covers ROCK',
+      'spock' => 'PAPER disproves SPOCK'
+    },
+    'scissors' => {
+      'paper' => 'SCISSORS cuts PAPER',
+      'lizard' => 'SCISSORS decapitates LIZARD'
+    },
+    'spock' => {
+      'scissors' => 'SPOCK smashes SCISSORS',
+      'rock' => 'SPOCK vaporizes ROCK'
+    },
+    'lizard' => {
+      'paper' => 'LIZARD eats PAPER',
+      'spock' => 'LIZARD poisons SPOCK'
+    }
   }
 
   def initialize(value)
@@ -144,18 +173,18 @@ class RPSGame
   end
 
   def play_round
-    update_scores
+    refresh_scoreboard
     display_selection_menu
     human.choose
     computer.choose
     display_choices
     winner = determine_round_winner
-    winner.score += 1 unless tie?
+    update_score(winner)
     display_round_result(winner)
     prompt_for_next_round unless game_won?
   end
 
-  def update_scores
+  def refresh_scoreboard
     clear_screen
     display_banner("rock-paper-scissors")
     display_scores
@@ -193,10 +222,19 @@ class RPSGame
     if tie?
       puts "It's a tie!"
     else
-      update_scores
+      refresh_scoreboard
       display_choices
+      display_winning_message(winner)
+      puts ""
       puts "#{winner.name} won this round!"
     end
+  end
+
+  def display_winning_message(winner)
+    loser = winner == human ? computer : human
+    puts "===>  " + \
+      Move::WINNING_MESSAGES[winner.move.to_s][loser.move.to_s] + \
+      "   <==="
   end
 
   def tie?
@@ -207,6 +245,10 @@ class RPSGame
     human.move > computer.move ? human : computer
   end
 
+  def update_score(winner)
+    winner.score += 1 unless tie?
+  end
+    
   def prompt_for_next_round
     puts ""
     puts "Hit 'Enter' to play the next round..."
@@ -218,9 +260,12 @@ class RPSGame
   end
 
   def display_game_result
-    update_scores
+    refresh_scoreboard
     display_choices
-    puts "#{determine_round_winner.name} won the last round..."
+    last_round_winner = determine_round_winner
+    display_winning_message(last_round_winner)
+    puts ""
+    puts "#{last_round_winner.name} won the last round..."
     winner = human.score == WINNING_SCORE ? human : computer
     puts ""
     puts "================================"
@@ -233,12 +278,12 @@ class RPSGame
   def play_again?
     answer = nil
     loop do
-      puts "Would you like to play again? (yes or no)"
-      answer = gets.chomp
-      break if %w(y n).include?(answer.downcase)
-      puts "Sorry, you must choose y or n."
+      puts "Would you like to play again? (yes/y or no/n)"
+      answer = gets.chomp.strip.downcase
+      break if %w(yes y no n).include?(answer)
+      puts "Invalid choice..."
     end
-    answer == 'y'
+    answer == 'y' || answer == 'yes'
   end
 
   def display_goodbye_message
@@ -255,5 +300,5 @@ RPSGame.new.play
 # keep track of move history:
 # add computer personalities:
 # add shortcuts for choices : DONE
-# add winning messages      :
+# add winning messages      : DONE
 # UI improvements           :
