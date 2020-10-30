@@ -317,7 +317,7 @@ RPSGame.new.play
 # keeping score             : DONE
 # add spock and lizard      : DONE
 # add a class for each moves:
-# keep track of move history: 
+# keep track of move history: DONE
 # add computer personalities:
 # add shortcuts for choices : DONE
 # add winning messages      : DONE
