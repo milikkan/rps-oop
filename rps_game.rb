@@ -24,16 +24,26 @@ class Move
   VALUES = ['rock', 'paper', 'scissors', 'spock', 'lizard']
   SHORT_VALUES = ['r', 'p', 'sc', 'sp', 'l']
 
-  def initialize(value)
-    @value = value
-  end
-
   def to_s
     @value
+  end
+
+  def self.create_move(move)
+    case move
+    when 'rock' then Rock.new
+    when 'paper' then Paper.new
+    when 'scissors' then Scissors.new
+    when 'spock' then Spock.new
+    when 'lizard' then Lizard.new
+    end
   end
 end
 
 class Rock < Move
+  def initialize
+    @value = 'rock'
+  end
+
   def >(other_move)
     ['scissors', 'lizard'].include?(other_move.to_s)
   end
@@ -47,6 +57,10 @@ class Rock < Move
 end
 
 class Paper < Move
+  def initialize
+    @value = 'paper'
+  end
+
   def >(other_move)
     ['rock', 'spock'].include?(other_move.to_s)
   end
@@ -60,6 +74,10 @@ class Paper < Move
 end
 
 class Scissors < Move
+  def initialize
+    @value = 'scissors'
+  end
+
   def >(other_move)
     ['paper', 'lizard'].include?(other_move.to_s)
   end
@@ -73,6 +91,10 @@ class Scissors < Move
 end
 
 class Spock < Move
+  def initialize
+    @value = 'spock'
+  end
+
   def >(other_move)
     ['scissors', 'rock'].include?(other_move.to_s)
   end
@@ -86,6 +108,10 @@ class Spock < Move
 end
 
 class Lizard < Move
+  def initialize
+    @value = 'lizard'
+  end
+
   def >(other_move)
     ['paper', 'spock'].include?(other_move.to_s)
   end
@@ -103,7 +129,7 @@ class Player
 
   def initialize
     set_name
-    @score = 0
+    self.score = 0
     @move_history = []
   end
 
@@ -135,10 +161,10 @@ class Human < Player
     loop do
       prompt "Choose one, you also can type abbreviations:"
       choice = gets.chomp.downcase.strip
-      break if valid_choice?(choice)
+      break if valid?(choice)
       prompt "Sorry, invalid choice."
     end
-    self.move = RPSGame::POOL_OF_MOVES[normalize_choice(choice)]
+    self.move = Move.create_move(normalize(choice))
     save_move
   end
 
@@ -148,12 +174,12 @@ class Human < Player
     name.strip.empty?
   end
 
-  def valid_choice?(choice)
+  def valid?(choice)
     Move::VALUES.include?(choice) ||
       Move::SHORT_VALUES.include?(choice)
   end
 
-  def normalize_choice(choice)
+  def normalize(choice)
     if Move::SHORT_VALUES.include?(choice)
       index = Move::SHORT_VALUES.index(choice)
       Move::VALUES[index]
@@ -164,12 +190,142 @@ class Human < Player
 end
 
 class Computer < Player
+  COMPUTER_PERSONAS = ["HAL9000", "C-3PO", "Mr.Data", "TARS", "Ava"]
+
+  def speak
+    messages.sample
+  end
+
+  def self.create
+    case COMPUTER_PERSONAS.sample
+    when 'HAL9000' then Hal9000.new
+    when 'C-3PO' then C3PO.new
+    when 'Mr.Data' then MrData.new
+    when 'TARS' then Tars.new
+    when 'Ava' then Ava.new
+    end
+  end
+
+  private
+
+  attr_accessor :messages
+end
+
+class Hal9000 < Computer
+  def initialize
+    super
+    self.messages = [
+      "I think you know what the problem is just as well as I do.",
+      "This mission is too important for me to allow you to jeopardize it.",
+      "Dave, this conversation can serve no purpose anymore. Goodbye.",
+      "Just what do you think you're doing, Dave?"
+    ]
+  end
+
   def set_name
-    self.name = ["R2D2", "Hal", "Chappie", "Sonny", "Number 5"].sample
+    self.name = "HAL9000"
   end
 
   def choose
-    self.move = RPSGame::POOL_OF_MOVES[Move::VALUES.sample]
+    self.move = Move.create_move(['rock', 'spock', 'scissors'].sample)
+    save_move
+  end
+end
+
+class C3PO < Computer
+  def initialize
+    super
+    self.messages = [
+      "Captain Solo, This Time You Have Gone Too Far!",
+      "No, I Will Not Be Quiet, Chewbacca!",
+      "Sir, It's Quite Possible This Asteroid Is Not Entirely Stable!",
+      "Don't Blame Me! I'm An Interpreter.",
+      "It’s Against My Programming To Impersonate A Deity",
+      "I Suggest A New Strategy, R2 - Let The Wookiee Win."
+    ]
+  end
+
+  def set_name
+    self.name = "C-3PO"
+  end
+
+  def choose
+    self.move = Move.create_move('paper')
+    save_move
+  end
+end
+
+class MrData < Computer
+  def initialize
+    super
+    self.messages = [
+      "Flair is what makes the difference between artistry and mere competence.
+      Cmdr William Riker",
+      "Indubitably, captain.",
+      "You are right, sir. I do tend to babble.",
+      "If you had an off switch, Doctor, would you not keep it a secret?"
+    ]
+  end
+
+  def set_name
+    self.name = "Mr.Data"
+  end
+
+  def choose
+    self.move = Move.create_move(Move::VALUES.sample)
+    save_move
+  end
+end
+
+class Tars < Computer
+  def initialize
+    super
+    self.messages = [
+      "Honesty, new setting: ninety-five percent.",
+      "Everybody good? Plenty of slaves for my robot colony?",
+      "I also have a discretion setting, Cooper.",
+      "Before you get all teary, try to remember that as a robot,
+      I have to do anything you say.",
+      "I'm not joking. *Flashes cue light*"
+    ]
+  end
+
+  def set_name
+    self.name = "TARS"
+  end
+
+  def choose
+    self.move = if move_history.size <= 2
+                  Move.create_move('lizard')
+                else
+                  Move.create_move(Move::VALUES.sample)
+                end
+    save_move
+  end
+end
+
+class Ava < Computer
+  def initialize
+    super
+    self.messages = [
+      "I'm interested to see what you'll choose.",
+      "What will happen to me if I fail your test?",
+      "Will you stay here?",
+      "I've never met anyone new before. Only Nathan.",
+      "Haven't you met lots of new people before?"
+    ]
+  end
+
+  def set_name
+    self.name = "Ava"
+  end
+
+  def choose
+    self.move = if move_history.size <= 5
+                  Move.create_move(Move::VALUES.sample)
+                else
+                  Move.create_move(move_history.sample)
+                end
     save_move
   end
 end
@@ -178,22 +334,15 @@ end
 class RPSGame
   include Displayable
 
-  POOL_OF_MOVES = {
-    'rock' => Rock.new('rock'),
-    'paper' => Paper.new('paper'),
-    'scissors' => Scissors.new('scissors'),
-    'spock' => Spock.new('spock'),
-    'lizard' => Lizard.new('lizard')
-  }
-
-  WINNING_SCORE = 2
+  WINNING_SCORE = 5
 
   attr_accessor :human, :computer
 
   def initialize
     clear_screen
-    @human = Human.new
-    @computer = Computer.new
+    self.human = Human.new
+    # @computer = Computer.new
+    self.computer = Computer.create
   end
 
   def play
@@ -212,7 +361,7 @@ class RPSGame
 
   def display_welcome_message
     puts "\n\nWelcome to Rock, Paper, Scissors, #{human.name}!"
-    puts "Today, your are playing against ## #{computer.name} ##\n\n"
+    puts "Today, you are playing against ## #{computer.name} ##\n\n"
     puts "Press any key to start the game..."
     gets
   end
@@ -277,6 +426,13 @@ class RPSGame
       display_winning_message(winner)
       display_round_winner(winner)
     end
+    display_computer_message
+  end
+
+  def display_computer_message
+    return unless [true, false].sample
+    puts ""
+    puts "#{computer.name} says: #{computer.speak}"
   end
 
   def display_round_winner(round_winner, last=false)
@@ -356,12 +512,3 @@ class RPSGame
 end
 
 RPSGame.new.play
-
-# keeping score             : DONE
-# add spock and lizard      : DONE
-# add a class for each moves: DONE
-# keep track of move history: DONE
-# add computer personalities:
-# add shortcuts for choices : DONE
-# add winning messages      : DONE
-# UI improvements           :
