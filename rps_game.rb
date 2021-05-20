@@ -28,6 +28,14 @@ class Move
     @value
   end
 
+  def >(other_move)
+    @wins_against.include?(other_move.to_s)
+  end
+
+  def winning_message(loser_move)
+    "#{@value.upcase} #{@wins_against[loser_move.to_s]} #{loser_move.to_s.upcase}"
+  end
+
   def self.create_move(move)
     case move
     when 'rock' then Rock.new
@@ -42,85 +50,35 @@ end
 class Rock < Move
   def initialize
     @value = 'rock'
-  end
-
-  def >(other_move)
-    ['scissors', 'lizard'].include?(other_move.to_s)
-  end
-
-  def winning_message(loser_move)
-    case loser_move.to_s
-    when 'lizard'   then 'ROCK crushes LIZARD'
-    when 'scissors' then 'ROCK crushes SCISSORS'
-    end
+    @wins_against = {'scissors' => 'crushes', 'lizard' => 'crushes'}
   end
 end
 
 class Paper < Move
   def initialize
     @value = 'paper'
-  end
-
-  def >(other_move)
-    ['rock', 'spock'].include?(other_move.to_s)
-  end
-
-  def winning_message(loser_move)
-    case loser_move.to_s
-    when 'rock'  then 'PAPER covers ROCK'
-    when 'spock' then 'PAPER disproves SPOCK'
-    end
+    @wins_against = {'rock' => 'covers', 'spock' => 'disproves'}
   end
 end
 
 class Scissors < Move
   def initialize
     @value = 'scissors'
-  end
-
-  def >(other_move)
-    ['paper', 'lizard'].include?(other_move.to_s)
-  end
-
-  def winning_message(loser_move)
-    case loser_move.to_s
-    when 'paper'  then 'SCISSORS cuts PAPER'
-    when 'lizard' then 'SCISSORS decapitates LIZARD'
-    end
+    @wins_against = {'paper' => 'cuts', 'lizard' => 'decapitates'}
   end
 end
 
 class Spock < Move
   def initialize
     @value = 'spock'
-  end
-
-  def >(other_move)
-    ['scissors', 'rock'].include?(other_move.to_s)
-  end
-
-  def winning_message(loser_move)
-    case loser_move.to_s
-    when 'scissors' then 'SPOCK smashes SCISSORS'
-    when 'rock'     then 'SPOCK vaporizes ROCK'
-    end
+    @wins_against = {'scissors' => 'smashes', 'rock' => 'vaporizes'}
   end
 end
 
 class Lizard < Move
   def initialize
     @value = 'lizard'
-  end
-
-  def >(other_move)
-    ['paper', 'spock'].include?(other_move.to_s)
-  end
-
-  def winning_message(loser_move)
-    case loser_move.to_s
-    when 'paper' then 'LIZARD eats PAPER'
-    when 'spock' then 'LIZARD poisons SPOCK'
-    end
+    @wins_against = {'paper' => 'eats', 'spock' => 'poisons'}
   end
 end
 
@@ -362,7 +320,7 @@ class RPSGame
   def display_welcome_message
     puts "\n\nWelcome to Rock, Paper, Scissors, #{human.name}!"
     puts "Today, you are playing against ## #{computer.name} ##\n\n"
-    puts "Press any key to start the game..."
+    puts "Hit enter to start the game..."
     gets
   end
 
@@ -474,8 +432,12 @@ class RPSGame
     last_round_winner = determine_round_winner
     display_winning_message(last_round_winner)
     display_round_winner(last_round_winner, true)
-    game_winner = human.score == WINNING_SCORE ? human : computer
+    game_winner = determine_game_winner
     display_game_winner(game_winner)
+  end
+
+  def determine_game_winner
+    human.score == WINNING_SCORE ? human : computer
   end
 
   def display_game_winner(game_winner)
